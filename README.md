@@ -25,14 +25,14 @@ var envelope = ADSRNode(ctx, {
   base:             5.0, // starting value (default: 0.0)
   delay:            0.1, // seconds to wait before attacking (default: 0.0)
   attack:           0.2, // seconds until hitting peak value
-  attackCurve:  <curve>, // set type of curve for attack (default: 'linear')
+  attackCurve:  <curve>, // type of curve for attack (default: 'linear')
   peak:             9.0, // peak value (default: 1.0)
   hold:             0.3, // seconds to hold at the peak value (default: 0.0)
   decay:            0.4, // seconds until hitting sustain value
-  decayCurve:   <curve>, // set type of curve for decay (default: 'linear')
+  decayCurve:   <curve>, // type of curve for decay (default: 'linear')
   sustain:          3.0, // sustain value
   release:          0.5, // seconds until returning back to base value
-  releaseCurve: <curve>  // set type of curve for release (default: 'linear')
+  releaseCurve: <curve>  // type of curve for release (default: 'linear')
 });
 ```
 
@@ -67,6 +67,6 @@ The `when` parameter behaves just like `envelope.trigger`.
 
 ### *envelope*.reset([*when*])
 
-Reset an envelope immediately (output `base` value and wait for a trigger).
+Reset an envelope immediately (i.e., output `base` value and wait for a trigger).
 
 The `when` parameter behaves just like `envelope.trigger`.
