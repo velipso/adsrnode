@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<!--
+(c) Copyright 2018, Sean Connelly (@voidqk), http://sean.cm
+MIT License
+Project Home: https://github.com/voidqk/adsrnode
+-->
+<head>
+	<title>ADSRNode Debugger</title>
+	<script src="adsrnode.js"></script>
+	<style>
+
+body {
+	background-color: #eef;
+}
+
+	</style>
+</head>
+<body>
+	<canvas id="cnv" width="1600" height="800" style="width: 800px; height: 400px;"></canvas>
+	<script>
+
+var cnv = document.getElementById('cnv');
+var ctx = cnv.getContext('2d');
+var debugTwo = true;
+
+function redraw(offset){
+	var curve = 'exponential';
+	var opts = {
+		base: -0.5,
+		attack: 0.2,
+		attackCurve: curve,
+		peak: 1,
+		hold: 0.3,
+		decay: 0.4,
+		decayCurve: curve,
+		sustain: 0.5,
+		release: 0.5,
+		releaseCurve: curve
+	};
+
+	var rate = 44100;
+	var sustime = 1; // seconds to sustain
+	var downtime = opts.attack + opts.hold + opts.decay + sustime;
+	var duration = downtime + opts.release + 0.5;
+	var actx = new OfflineAudioContext(1, Math.ceil(rate * duration), rate);
+	var env = ADSRNode(actx, opts);
+	env.connect(actx.destination);
+	env.start();
+	env.trigger(0);
+	if (debugTwo){
+		if (offset * duration > downtime)
+			env.release(downtime);
+		env.trigger(offset * duration);
+	}
+	else
+		env.release(offset * duration);
+
+	actx.startRendering().then(function(buf){
+		ctx.fillStyle = '#fff';
+		ctx.fillRect(0, 0, cnv.width, cnv.height);
+		ctx.beginPath();
+		var data = buf.getChannelData(0);
+		for (var sx = 0; sx < cnv.width; sx++){
+			var x = sx / (cnv.width - 1);
+			var y = data[(x * rate * duration) | 0];
+			var sy = cnv.height * 0.5 - y * cnv.height * 0.4;
+			if (sx == 0)
+				ctx.moveTo(sx, sy);
+			else
+				ctx.lineTo(sx, sy);
+		}
+		ctx.strokeStyle = '#000';
+		ctx.stroke();
+	});
+}
+
+cnv.addEventListener('mousemove', function(e){
+	redraw(e.offsetX * 2 / cnv.width);
+});
+
+cnv.addEventListener('click', function(e){
+	debugTwo = !debugTwo;
+	redraw(e.offsetX * 2 / cnv.width);
+});
+	</script>
+</body>
+</html>

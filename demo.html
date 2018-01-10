@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<!--
+(c) Copyright 2018, Sean Connelly (@voidqk), http://sean.cm
+MIT License
+Project Home: https://github.com/voidqk/adsrnode
+-->
+<head>
+	<title>ADSRNode Demo</title>
+	<script src="adsrnode.js"></script>
+	<style>
+html, body {
+	font-family: sans-serif;
+	background-color: #eef;
+}
+table, tr {
+	background-color: #fff;
+	border-collapse: collapse;
+	padding: 0;
+}
+td {
+	padding: 5px;
+	border: 1px solid #777;
+	text-align: center;
+}
+td:first-child {
+	text-align: right;
+	font-weight: bold;
+}
+pre {
+	text-align: left;
+	margin: 0 10px;
+}
+input[type=range] {
+	width: 350px;
+}
+	</style>
+</head>
+<body>
+	<canvas id="cnv" width="1600" height="800" style="width: 800px; height: 400px;"></canvas>
+	<table>
+		<tbody>
+			<tr>
+				<td>Base:</td>
+				<td>-10 <input type="range" min="0" max="200" value="100" id="base" /> 10</td>
+				<td rowspan="11"><pre id="raw"></pre></td>
+			</tr>
+			<tr>
+				<td>Attack:</td>
+				<td>0 <input type="range" min="0" max="50" value="10" id="attack" /> 5</td>
+			</tr>
+			<tr>
+				<td>Attack Curve:</td>
+				<td style="text-align: left;"><select id="acurve">
+					<option value="linear">linear</option>
+					<option value="exponential">exponential</option>
+				</select></td>
+			</tr>
+			<tr>
+				<td>Peak:</td>
+				<td>-10 <input type="range" min="0" max="200" value="120" id="peak" /> 10</td>
+			</tr>
+			<tr>
+				<td>Hold:</td>
+				<td>0 <input type="range" min="0" max="50" value="10" id="hold" /> 5</td>
+			</tr>
+			<tr>
+				<td>Decay:</td>
+				<td>0 <input type="range" min="0" max="50" value="10" id="decay" /> 5</td>
+			</tr>
+			<tr>
+				<td>Decay Curve:</td>
+				<td style="text-align: left;"><select id="dcurve">
+					<option value="linear">linear</option>
+					<option value="exponential">exponential</option>
+				</select></td>
+			</tr>
+			<tr>
+				<td>Sustain:</td>
+				<td>-10 <input type="range" min="0" max="200" value="110" id="sustain" /> 10</td>
+			</tr>
+			<tr>
+				<td>Release:</td>
+				<td>0 <input type="range" min="0" max="50" value="10" id="release" /> 5</td>
+			</tr>
+			<tr>
+				<td>Release Curve:</td>
+				<td style="text-align: left;"><select id="rcurve">
+					<option value="linear">linear</option>
+					<option value="exponential">exponential</option>
+				</select></td>
+			</tr>
+		</tbody>
+	</table>
+	<script>
+
+var cnv = document.getElementById('cnv');
+var ctx = cnv.getContext('2d');
+var lastopts = false;
+
+function redraw(){
+	function readValue(id){
+		return parseFloat(document.getElementById(id).value) / 10 - 10;
+	}
+	function readTime(id){
+		return parseFloat(document.getElementById(id).value) / 10;
+	}
+	function readCurve(id){
+		var e = document.getElementById(id);
+		return e.options[e.selectedIndex].value;
+	}
+	var opts = {
+		base:         readValue('base'   ),
+		attack:       readTime ('attack' ),
+		attackCurve:  readCurve('acurve' ),
+		peak:         readValue('peak'   ),
+		hold:         readTime ('hold'   ),
+		decay:        readTime ('decay'  ),
+		decayCurve:   readCurve('dcurve' ),
+		sustain:      readValue('sustain'),
+		release:      readTime ('release'),
+		releaseCurve: readCurve('rcurve' )
+	};
+
+	// check if any changes have been made
+	if (lastopts !== false &&
+		lastopts.base         === opts.base         &&
+		lastopts.attack       === opts.attack       &&
+		lastopts.attackCurve  === opts.attackCurve  &&
+		lastopts.peak         === opts.peak         &&
+		lastopts.hold         === opts.hold         &&
+		lastopts.decay        === opts.decay        &&
+		lastopts.decayCurve   === opts.decayCurve   &&
+		lastopts.sustain      === opts.sustain      &&
+		lastopts.release      === opts.release      &&
+		lastopts.releaseCurve === opts.releaseCurve)
+		return;
+	lastopts = opts;
+
+	var out = '';
+	for (var k in opts){
+		out += '\n  ' + k + ': ';
+		if (typeof opts[k] === 'number')
+			out += opts[k].toFixed(1) + ',';
+		else
+			out += JSON.stringify(opts[k]) + ',';
+	}
+	document.getElementById('raw').innerHTML = '{' + out.substr(0, out.length - 1) + '\n}';
+
+	var rate = 44100;
+	var sustime = 1; // seconds to sustain
+	var downtime = opts.attack + opts.hold + opts.decay + sustime;
+	var duration = downtime + opts.release;
+	var actx = new OfflineAudioContext(1, Math.ceil(rate * duration), rate);
+	var env = ADSRNode(actx, opts);
+	env.connect(actx.destination);
+	env.start();
+	env.trigger(0);
+	env.release(downtime);
+
+	actx.startRendering().then(function(buf){
+		ctx.fillStyle = '#fff';
+		ctx.fillRect(0, 0, cnv.width, cnv.height);
+		var data = buf.getChannelData(0);
+		var dmin = data[0];
+		var dmax = data[0];
+		for (var i = 1; i < data.length; i++){
+			if (data[i] < dmin)
+				dmin = data[i];
+			if (data[i] > dmax)
+				dmax = data[i];
+		}
+
+		var border = 100;
+		var ox = border;
+		var oy = border;
+		var ow = cnv.width - 2 * border;
+		var oh = cnv.height - 2 * border;
+
+		function todat(sx, sy){
+			return [
+				(sx - ox) * duration / ow,
+				((oy - sy) / oh + 1) * (dmax - dmin) + dmin
+			];
+		}
+
+		function toscr(x, y){
+			return [
+				ox + Math.round((x * ow) / duration),
+				oy + Math.round(oh * (1 - (y - dmin) / (dmax - dmin)))
+			];
+		}
+
+		// fix aspect ratio
+		var p1 = toscr(0, 0);
+		var p2 = toscr(1, 1);
+		var datratio = Math.abs((p2[0] - p1[0]) / (p2[1] - p1[1]));
+		if (datratio < 1){
+			// decrease oh
+			oh *= datratio;
+			oy = (cnv.height - oh) * 0.5;
+		}
+		else{
+			// decrease ow
+			ow /= datratio;
+		}
+
+		function hline(y){
+			y = toscr(0, y)[1];
+			ctx.moveTo(0, y);
+			ctx.lineTo(cnv.width, y);
+		}
+
+		function vline(x){
+			x = toscr(x, 0)[0];
+			ctx.moveTo(x, 0);
+			ctx.lineTo(x, cnv.height);
+		}
+
+		ctx.beginPath();
+		for (var gy = -10; gy <= 10; gy += 1)
+			hline(gy);
+		for (var gx = -2; gx <= 22; gx += 1)
+			vline(gx);
+		ctx.lineWidth = 3;
+		ctx.strokeStyle = '#ccc';
+		ctx.stroke();
+
+		ctx.beginPath();
+		hline(0);
+		vline(0);
+		ctx.lineWidth = 3;
+		ctx.strokeStyle = '#000';
+		ctx.stroke();
+
+		ctx.beginPath();
+		ctx.moveTo(0, toscr(0, data[0])[1]);
+		for (var sx = 0; sx < ow; sx++){
+			var x = todat(sx + ox, 0)[0];
+			var i = (x * rate) | 0;
+			if (i > data.length - 1)
+				i = data.length - 1;
+			var y = data[i];
+			var p = toscr(x, y);
+			ctx.lineTo(p[0], p[1]);
+		}
+		ctx.lineTo(cnv.width, toscr(0, data[data.length - 1])[1]);
+		ctx.lineWidth = 5;
+		ctx.strokeStyle = '#000';
+		ctx.stroke();
+	});
+}
+setInterval(redraw, 100);
+	</script>
+</body>
+</html>

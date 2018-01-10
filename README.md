@@ -24,7 +24,6 @@ var envelope = ADSRNode(ctx, {
 // where <curve> can be 'linear' or 'exponential'
 var envelope = ADSRNode(ctx, {
   base:             5.0, // starting value (default: 0.0)
-  delay:            0.1, // seconds to wait before attacking (default: 0.0)
   attack:           0.2, // seconds until hitting peak value
   attackCurve:  <curve>, // type of curve for attack (default: 'linear')
   peak:             9.0, // peak value (default: 1.0)
@@ -50,7 +49,7 @@ It must be started with
 to begin outputting the `base` value.  It can be stopped with
 [envelope.stop()](https://developer.mozilla.org/en-US/docs/Web/API/AudioScheduledSourceNode/stop).
 
-Three new methods are added to the object:
+The following methods are added to the object:
 
 ### *envelope*.trigger([*when*])
 
@@ -73,3 +72,41 @@ The `when` parameter behaves just like `envelope.trigger`.
 Reset an envelope immediately (i.e., output `base` value and wait for a trigger).
 
 The `when` parameter behaves just like `envelope.trigger`.
+
+### *envelope*.update(opts)
+
+Update the values of the ADSR curve.  All keys are optional.  For example, to just update the
+peak, use `envelope.update({ peak: 2 })`.
+
+Updating the values of the curve will leave the envelope in an unpredictable state.  You might want
+to use `envelope.reset()` afterwards, or just go with it.
+
+Triggering and Releasing
+------------------------
+
+Special care has been taken to ensure the envelope correctly responds to triggering and releasing
+while still outputting a partial envelope.
+
+For example, if a trigger happens in the middle of the release phase, the attack will pick up where
+the release left off -- as it should.  Or if a release happens during the attack phase, it will
+correctly apply the release curve where the attack left off, etc.
+
+The only requirement from users of the library is to ensure calls to `trigger` and `release` happen
+in chronological order.
+
+For example, the following will fail, because it attempts to insert a trigger *before* a future
+trigger:
+
+```javascript
+// this FAILS
+envelope.trigger(8); // schedule trigger at 8 second mark
+envelope.trigger(5); // schedule trigger at 5 second mark (error!)
+```
+
+This is easily fixed by simply ordering the calls:
+
+```javascript
+// valid
+envelope.trigger(5);
+envelope.trigger(8);
+```
