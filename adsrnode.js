@@ -84,12 +84,12 @@ function ADSRNode(ctx, opts){
 		return endValue + (startValue - endValue) * Math.exp(-curTime * expFactor / maxTime);
 	}
 
-	function triggeredValue(tv, time){
+	function triggeredValue(time){
 		// calculates the actual value of the envelope at a given time, where `time` is the number
 		// of seconds after a trigger (but before a release)
-		var atktime = tv.atktime;
+		var atktime = lastTrigger.atktime;
 		if (time < atktime)
-			return curveValue(acurve, tv.v, peak, time, atktime);
+			return curveValue(acurve, lastTrigger.v, peak, time, atktime);
 		if (time < atktime + hold)
 			return peak;
 		if (time < atktime + hold + decay)
@@ -97,14 +97,14 @@ function ADSRNode(ctx, opts){
 		return sustain;
 	}
 
-	function releasedValue(rv, time){
+	function releasedValue(time){
 		// calculates the actual value of the envelope at a given time, where `time` is the number
 		// of seconds after a release
 		if (time < 0)
 			return sustain;
-		if (time > rv.reltime)
+		if (time > lastRelease.reltime)
 			return base;
-		return curveValue(rcurve, rv.v, base, time, rv.reltime);
+		return curveValue(rcurve, lastRelease.v, base, time, lastRelease.reltime);
 	}
 
 	function curveTo(param, type, value, time, duration){
@@ -127,7 +127,7 @@ function ADSRNode(ctx, opts){
 		var interruptedLine = false;
 		if (lastRelease !== false){
 			var now = when - lastRelease.when;
-			v = releasedValue(lastRelease, now);
+			v = releasedValue(now);
 			// check if a linear release has been interrupted by this attack
 			interruptedLine = rcurve === 'linear' && now >= 0 && now <= lastRelease.reltime;
 			lastRelease = false;
@@ -142,7 +142,7 @@ function ADSRNode(ctx, opts){
 		if (DEBUG){
 			// simulate curve using triggeredValue (debug purposes)
 			for (var i = 0; i < 10; i += 0.01)
-				this.offset.setValueAtTime(triggeredValue(lastTrigger, i), when + i);
+				this.offset.setValueAtTime(triggeredValue(i), when + i);
 			return this;
 		}
 
@@ -165,7 +165,7 @@ function ADSRNode(ctx, opts){
 		if (when < lastTrigger.when)
 			throw new Error('[ADSRNode] Cannot release before the last trigger');
 		var tnow = when - lastTrigger.when;
-		var v = triggeredValue(lastTrigger, tnow);
+		var v = triggeredValue(tnow);
 		var reltime = release;
 		if (Math.abs(sustain - base) > eps)
 			reltime = release * (v - base) / (sustain - base);
@@ -182,7 +182,7 @@ function ADSRNode(ctx, opts){
 		if (DEBUG){
 			// simulate curve using releasedValue (debug purposes)
 			for (var i = 0; true; i += 0.01){
-				this.offset.setValueAtTime(releasedValue(lastRelease, i), when + i);
+				this.offset.setValueAtTime(releasedValue(i), when + i);
 				if (i >= reltime)
 					break;
 			}
