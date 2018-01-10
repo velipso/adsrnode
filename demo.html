@@ -53,7 +53,7 @@ input[type=range] {
 				<td>Attack Curve:</td>
 				<td style="text-align: left;"><select id="acurve">
 					<option value="linear">linear</option>
-					<option value="exponential">exponential</option>
+					<option value="exponential" selected="selected">exponential</option>
 				</select></td>
 			</tr>
 			<tr>
@@ -217,13 +217,18 @@ function redraw(){
 			ctx.lineTo(x, cnv.height);
 		}
 
+		var susx1 = toscr(opts.attack + opts.hold + opts.decay, 0)[0];
+		var susx2 = toscr(opts.attack + opts.hold + opts.decay + sustime, 0)[0];
+		ctx.fillStyle = '#dfd';
+		ctx.fillRect(susx1, 0, susx2 - susx1, cnv.height);
+
 		ctx.beginPath();
 		for (var gy = -10; gy <= 10; gy += 1)
 			hline(gy);
 		for (var gx = -2; gx <= 22; gx += 1)
 			vline(gx);
 		ctx.lineWidth = 3;
-		ctx.strokeStyle = '#ccc';
+		ctx.strokeStyle = 'rgba(0, 0, 0, 0.25)';
 		ctx.stroke();
 
 		ctx.beginPath();
@@ -234,7 +239,9 @@ function redraw(){
 		ctx.stroke();
 
 		ctx.beginPath();
-		ctx.moveTo(0, toscr(0, data[0])[1]);
+		var basey = toscr(0, opts.base)[1]
+		ctx.moveTo(0, basey);
+		ctx.lineTo(ox, basey);
 		for (var sx = 0; sx < ow; sx++){
 			var x = todat(sx + ox, 0)[0];
 			var i = (x * rate) | 0;
@@ -244,10 +251,28 @@ function redraw(){
 			var p = toscr(x, y);
 			ctx.lineTo(p[0], p[1]);
 		}
-		ctx.lineTo(cnv.width, toscr(0, data[data.length - 1])[1]);
-		ctx.lineWidth = 5;
+		ctx.lineTo(ox + ow, basey);
+		ctx.lineTo(cnv.width, basey);
+		ctx.lineWidth = 7;
 		ctx.strokeStyle = '#000';
 		ctx.stroke();
+
+		function circle(x, y){
+			var p = toscr(x, y);
+			ctx.beginPath();
+			ctx.arc(p[0], p[1], 10, 0, Math.PI * 2);
+			ctx.fillStyle = '#f77';
+			ctx.strokeStyle = '#000';
+			ctx.lineWidth = 4;
+			ctx.fill();
+			ctx.stroke();
+		}
+		circle(0, opts.base);
+		circle(opts.attack, opts.peak);
+		circle(opts.attack + opts.hold, opts.peak);
+		circle(opts.attack + opts.hold + opts.decay, opts.sustain);
+		circle(opts.attack + opts.hold + opts.decay + sustime, opts.sustain);
+		circle(duration, opts.base);
 	});
 }
 setInterval(redraw, 100);
