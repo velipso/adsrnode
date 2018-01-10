@@ -9,6 +9,7 @@ Usage
 -----
 
 ```javascript
+// create the Audio Context
 var ctx = new AudioContext();
 
 // simple ADSR envelope
@@ -56,8 +57,10 @@ Three new methods are added to the object:
 Trigger the envelope.
 
 The `when` parameter is optional.  It's the time, in seconds, at which the envelope should trigger.
-It is the same time measurement as [AudioContext.currentTime](https://developer.mozilla.org/en-US/docs/Web/API/BaseAudioContext/currentTime),
-just like many other functions that take timed events.
+It is the same time measurement as
+[AudioContext.currentTime](https://developer.mozilla.org/en-US/docs/Web/API/BaseAudioContext/currentTime),
+just like many other functions that take timed events.  I.e., to trigger in two seconds, you
+would do: `envelope.trigger(ctx.currentTime + 2)`.  If omitted, it will trigger immediately.
 
 ### *envelope*.release([*when*])
 
