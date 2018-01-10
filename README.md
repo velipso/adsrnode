@@ -67,19 +67,16 @@ Release a triggered envelope.
 
 The `when` parameter behaves just like `envelope.trigger`.
 
-### *envelope*.reset([*when*])
+### *envelope*.reset()
 
 Reset an envelope immediately (i.e., output `base` value and wait for a trigger).
-
-The `when` parameter behaves just like `envelope.trigger`.
 
 ### *envelope*.update(opts)
 
 Update the values of the ADSR curve.  All keys are optional.  For example, to just update the
 peak, use `envelope.update({ peak: 2 })`.
 
-Updating the values of the curve will leave the envelope in an unpredictable state.  You might want
-to use `envelope.reset()` afterwards, or just go with it.
+Updating the envelope will also `reset` it.
 
 Triggering and Releasing
 ------------------------

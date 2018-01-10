@@ -197,13 +197,12 @@ function ADSRNode(ctx, opts){
 		return this;
 	};
 
-	node.reset = function(when){
-		if (typeof when === 'undefined')
-			when = this.context.currentTime;
+	node.reset = function(){
 		lastTrigger = false;
 		lastRelease = false;
-		this.offset.cancelScheduledValues(when);
-		this.offset.setValueAtTime(base, when);
+		var now = this.context.currentTime;
+		this.offset.cancelScheduledValues(now);
+		this.offset.setTargetAtTime(base, now, 0.001);
 		return this;
 	};
 
@@ -218,7 +217,7 @@ function ADSRNode(ctx, opts){
 		sustain = getNum  (opts, 'sustain'     , sustain);
 		release = getNum  (opts, 'release'     , release);
 		rcurve  = getCurve(opts, 'releaseCurve', rcurve );
-		return this;
+		return this.reset();
 	};
 
 	return node;
