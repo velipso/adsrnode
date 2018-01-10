@@ -49,11 +49,11 @@ It must be started with
 to begin outputting the `base` value.  It can be stopped with
 [envelope.stop()](https://developer.mozilla.org/en-US/docs/Web/API/AudioScheduledSourceNode/stop).
 
-Two new methods are added to the object:
+Three new methods are added to the object:
 
 ### *envelope*.trigger([*when*])
 
-This will trigger the envelope.
+Trigger the envelope.
 
 The `when` parameter is optional.  It's the time, in seconds, at which the envelope should trigger.
 It is the same time measurement as [AudioContext.currentTime](https://developer.mozilla.org/en-US/docs/Web/API/BaseAudioContext/currentTime),
@@ -61,6 +61,12 @@ just like many other functions that take timed events.
 
 ### *envelope*.release([*when*])
 
-This will release the envelope.
+Release a triggered envelope.
+
+The `when` parameter behaves just like `envelope.trigger`.
+
+### *envelope*.reset([*when*])
+
+Reset an envelope immediately (output `base` value and wait for a trigger).
 
 The `when` parameter behaves just like `envelope.trigger`.
