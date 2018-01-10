@@ -8,6 +8,8 @@ ADSRNode is a single JavaScript function that creates an ADSR envelope for use i
 Usage
 -----
 
+### ADSRNode(*audioCtx*, *opts*)
+
 ```javascript
 // create the Audio Context
 var ctx = new AudioContext();
@@ -71,7 +73,7 @@ The `when` parameter behaves just like `envelope.trigger`.
 
 Reset an envelope immediately (i.e., output `base` value and wait for a trigger).
 
-### *envelope*.update(opts)
+### *envelope*.update(*opts*)
 
 Update the values of the ADSR curve.  All keys are optional.  For example, to just update the
 peak, use `envelope.update({ peak: 2 })`.
