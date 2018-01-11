@@ -24,16 +24,16 @@ var envelope = ADSRNode(ctx, {
 
 // advanced ADSR envelope
 var envelope = ADSRNode(ctx, {
-  base:         5.0, // starting value (default: 0.0)
+  base:         5.0, // starting value (default: 0)
   attack:       0.2, // seconds until hitting peak value
-  attackCurve:  0.0, // amount of curve for attack (default: 0.0)
-  peak:         9.0, // peak value (default: 1.0)
-  hold:         0.3, // seconds to hold at the peak value (default: 0.0)
+  attackCurve:  0.0, // amount of curve for attack (default: 0)
+  peak:         9.0, // peak value (default: 1)
+  hold:         0.3, // seconds to hold at the peak value (default: 0)
   decay:        0.4, // seconds until hitting sustain value
-  decayCurve:   5.0, // amount of curve for decay (default: 0.0)
+  decayCurve:   5.0, // amount of curve for decay (default: 0)
   sustain:      3.0, // sustain value
   release:      0.5, // seconds until returning back to base value
-  releaseCurve: 1.0  // amount of curve for release (default: 0.0)
+  releaseCurve: 1.0  // amount of curve for release (default: 0)
 });
 ```
 

@@ -42,14 +42,7 @@ function ADSRNode(ctx, opts){
 	var release = getNum(opts, 'release'                );
 	var rcurve  = getNum(opts, 'releaseCurve' ,        0);
 
-	var sustain_adj = adjustExpCurve(dcurve, peak, sustain);
-
-	function adjustExpCurve(type, startValue, endValue){
-		if (type === 0)
-			return endValue;
-		var endExp = Math.exp(-type);
-		return (endValue - startValue * endExp) / (1 - endExp);
-	}
+	var sustain_adj = adjustCurve(dcurve, peak, sustain);
 
 	// create the node and inject the new methods
 	var node = ctx.createConstantSource();
@@ -81,13 +74,22 @@ function ADSRNode(ctx, opts){
 		return endValue + (startValue - endValue) * Math.exp(-curTime * type / maxTime);
 	}
 
+	function adjustCurve(type, startValue, endValue){
+		// the exponential curve will never hit its target... but we can calculate an adjusted
+		// target so that it will miss the adjusted value, but end up hitting the actual target
+		if (type === 0)
+			return endValue; // linear hits its target, so no worries
+		var endExp = Math.exp(-type);
+		return (endValue - startValue * endExp) / (1 - endExp);
+	}
+
 	function triggeredValue(time){
 		// calculates the actual value of the envelope at a given time, where `time` is the number
 		// of seconds after a trigger (but before a release)
 		var atktime = lastTrigger.atktime;
 		if (time < atktime){
 			return curveValue(acurve, lastTrigger.v,
-				adjustExpCurve(acurve, lastTrigger.v, peak), time, atktime);
+				adjustCurve(acurve, lastTrigger.v, peak), time, atktime);
 		}
 		if (time < atktime + hold)
 			return peak;
@@ -104,7 +106,7 @@ function ADSRNode(ctx, opts){
 		if (time > lastRelease.reltime)
 			return base;
 		return curveValue(rcurve, lastRelease.v,
-			adjustExpCurve(rcurve, lastRelease.v, base), time, lastRelease.reltime);
+			adjustCurve(rcurve, lastRelease.v, base), time, lastRelease.reltime);
 	}
 
 	function curveTo(param, type, value, time, duration){
@@ -150,7 +152,7 @@ function ADSRNode(ctx, opts){
 			this.offset.linearRampToValueAtTime(v, when);
 		else
 			this.offset.setTargetAtTime(v, when, 0.001);
-		curveTo(this.offset, acurve, adjustExpCurve(acurve, v, peak), when, atktime);
+		curveTo(this.offset, acurve, adjustCurve(acurve, v, peak), when, atktime);
 		this.offset.setTargetAtTime(peak, when + atktime, 0.001);
 		this.offset.setTargetAtTime(peak, when + atktime + hold, 0.001);
 		curveTo(this.offset, dcurve, sustain_adj, when + atktime + hold, decay);
@@ -195,7 +197,7 @@ function ADSRNode(ctx, opts){
 			this.offset.linearRampToValueAtTime(v, when);
 		else
 			this.offset.setTargetAtTime(v, when, 0.001);
-		curveTo(this.offset, rcurve, adjustExpCurve(rcurve, v, base), when, reltime);
+		curveTo(this.offset, rcurve, adjustCurve(rcurve, v, base), when, reltime);
 		this.offset.setTargetAtTime(base, when + reltime, 0.001);
 		return this;
 	};
@@ -210,17 +212,17 @@ function ADSRNode(ctx, opts){
 	};
 
 	node.update = function(opts){
-		base     = getNum(opts, 'base'         , base   );
-		attack   = getNum(opts, 'attack'       , attack );
-		acurve   = getNum(opts, 'attackCurve'  , acurve );
-		peak     = getNum(opts, 'peak'         , peak   );
-		hold     = getNum(opts, 'hold'         , hold   );
-		decay    = getNum(opts, 'decay'        , decay  );
-		dcurve   = getNum(opts, 'decayCurve'   , dcurve );
-		sustain  = getNum(opts, 'sustain'      , sustain);
-		release  = getNum(opts, 'release'      , release);
-		rcurve   = getNum(opts, 'releaseCurve' , rcurve );
-		sustain_adj = adjustExpCurve(dcurve, peak, sustain);
+		base    = getNum(opts, 'base'        , base   );
+		attack  = getNum(opts, 'attack'      , attack );
+		acurve  = getNum(opts, 'attackCurve' , acurve );
+		peak    = getNum(opts, 'peak'        , peak   );
+		hold    = getNum(opts, 'hold'        , hold   );
+		decay   = getNum(opts, 'decay'       , decay  );
+		dcurve  = getNum(opts, 'decayCurve'  , dcurve );
+		sustain = getNum(opts, 'sustain'     , sustain);
+		release = getNum(opts, 'release'     , release);
+		rcurve  = getNum(opts, 'releaseCurve', rcurve );
+		sustain_adj = adjustCurve(dcurve, peak, sustain);
 		return this.reset();
 	};
 
