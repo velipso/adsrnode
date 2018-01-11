@@ -82,8 +82,8 @@ Updating the envelope will also `reset` it.
 Triggering and Releasing
 ------------------------
 
-Special care has been taken to ensure the envelope correctly responds to triggering and releasing
-while still outputting a partial envelope.
+[Special care](https://rawgit.com/voidqk/adsrnode/master/debugger.html) has been taken to ensure the
+envelope correctly responds to triggering and releasing while still outputting a partial envelope.
 
 For example, if a trigger happens in the middle of the release phase, the attack will pick up where
 the release left off -- as it should.  Or if a release happens during the attack phase, it will
