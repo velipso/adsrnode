@@ -10,16 +10,16 @@ function ADSRNode(ctx, opts){
 	// `ctx` is the AudioContext
 	// `opts` is an object in the format:
 	// {
-	//   base:                         <number>, // output     optional    default: 0
-	//   attack:                       <number>, // seconds    required
-	//   attackCurve:  'linear' | 'exponential', // curve      optional    default: 'linear'
-	//   peak:                         <number>, // output     optional    default: 1
-	//   hold:                         <number>, // seconds    optional    default: 0
-	//   decay:                        <number>, // seconds    required
-	//   decayCurve:   'linear' | 'exponential', // curve      optional    default: 'linear'
-	//   sustain:                      <number>, // output     required
-	//   release:                      <number>, // seconds    required
-	//   releaseCurve: 'linear' | 'exponential', // curve      optional    default: 'linear'
+	//   base:         <number>, // output     optional    default: 0
+	//   attack:       <number>, // seconds    required
+	//   attackCurve:  <number>, // bend       optional    default: 0
+	//   peak:         <number>, // output     optional    default: 1
+	//   hold:         <number>, // seconds    optional    default: 0
+	//   decay:        <number>, // seconds    required
+	//   decayCurve:   <number>, // bend       optional    default: 0
+	//   sustain:      <number>, // output     required
+	//   release:      <number>, // seconds    required
+	//   releaseCurve: <number>  // bend       optional    default: 0
 	// }
 
 	function getNum(opts, key, def){
@@ -30,25 +30,26 @@ function ADSRNode(ctx, opts){
 		throw new Error('[ADSRNode] Expecting "' + key + '" to be a number');
 	}
 
-	function getCurve(opts, key, def){
-		if (typeof opts[key] === 'undefined')
-			return def;
-		if (opts[key] === 'linear' || opts[key] === 'exponential')
-			return opts[key];
-		throw new Error('[ADSRNode] Expecting "' + key + '" to be "linear" or "exponential"');
-	}
-
 	// extract options
-	var base    = getNum  (opts, 'base'        ,        0);
-	var attack  = getNum  (opts, 'attack'                );
-	var acurve  = getCurve(opts, 'attackCurve' , 'linear');
-	var peak    = getNum  (opts, 'peak'        ,        1);
-	var hold    = getNum  (opts, 'hold'        ,        0);
-	var decay   = getNum  (opts, 'decay'                 );
-	var dcurve  = getCurve(opts, 'decayCurve'  , 'linear');
-	var sustain = getNum  (opts, 'sustain'               );
-	var release = getNum  (opts, 'release'               );
-	var rcurve  = getCurve(opts, 'releaseCurve', 'linear');
+	var base    = getNum(opts, 'base'         ,        0);
+	var attack  = getNum(opts, 'attack'                 );
+	var acurve  = getNum(opts, 'attackCurve'  ,        0);
+	var peak    = getNum(opts, 'peak'         ,        1);
+	var hold    = getNum(opts, 'hold'         ,        0);
+	var decay   = getNum(opts, 'decay'                  );
+	var dcurve  = getNum(opts, 'decayCurve'   ,        0);
+	var sustain = getNum(opts, 'sustain'                );
+	var release = getNum(opts, 'release'                );
+	var rcurve  = getNum(opts, 'releaseCurve' ,        0);
+
+	var sustain_adj = adjustExpCurve(dcurve, peak, sustain);
+
+	function adjustExpCurve(type, startValue, endValue){
+		if (type === 0)
+			return endValue;
+		var endExp = Math.exp(-type);
+		return (endValue - startValue * endExp) / (1 - endExp);
+	}
 
 	// create the node and inject the new methods
 	var node = ctx.createConstantSource();
@@ -70,30 +71,28 @@ function ADSRNode(ctx, opts){
 	var lastTrigger = false;
 	var lastRelease = false;
 
-	// the exponential decay as it relates to the duration of the decay
-	// setTargetAtTime's `timeConstant` is set to `duration / expFactor`
-	var expFactor = 6;
-
 	// small epsilon value to check for divide by zero
 	var eps = 0.00001;
 
 	function curveValue(type, startValue, endValue, curTime, maxTime){
-		if (type === 'linear')
+		if (type === 0)
 			return startValue + (endValue - startValue) * Math.min(curTime / maxTime, 1);
 		// otherwise, exponential
-		return endValue + (startValue - endValue) * Math.exp(-curTime * expFactor / maxTime);
+		return endValue + (startValue - endValue) * Math.exp(-curTime * type / maxTime);
 	}
 
 	function triggeredValue(time){
 		// calculates the actual value of the envelope at a given time, where `time` is the number
 		// of seconds after a trigger (but before a release)
 		var atktime = lastTrigger.atktime;
-		if (time < atktime)
-			return curveValue(acurve, lastTrigger.v, peak, time, atktime);
+		if (time < atktime){
+			return curveValue(acurve, lastTrigger.v,
+				adjustExpCurve(acurve, lastTrigger.v, peak), time, atktime);
+		}
 		if (time < atktime + hold)
 			return peak;
 		if (time < atktime + hold + decay)
-			return curveValue(dcurve, peak, sustain, time - atktime - hold, decay);
+			return curveValue(dcurve, peak, sustain_adj, time - atktime - hold, decay);
 		return sustain;
 	}
 
@@ -104,14 +103,15 @@ function ADSRNode(ctx, opts){
 			return sustain;
 		if (time > lastRelease.reltime)
 			return base;
-		return curveValue(rcurve, lastRelease.v, base, time, lastRelease.reltime);
+		return curveValue(rcurve, lastRelease.v,
+			adjustExpCurve(rcurve, lastRelease.v, base), time, lastRelease.reltime);
 	}
 
 	function curveTo(param, type, value, time, duration){
-		if (type === 'linear' || duration <= 0)
+		if (type === 0 || duration <= 0)
 			param.linearRampToValueAtTime(value, time + duration);
 		else // exponential
-			param.setTargetAtTime(value, time, duration / expFactor);
+			param.setTargetAtTime(value, time, duration / type);
 	}
 
 	node.trigger = function(when){
@@ -129,7 +129,7 @@ function ADSRNode(ctx, opts){
 			var now = when - lastRelease.when;
 			v = releasedValue(now);
 			// check if a linear release has been interrupted by this attack
-			interruptedLine = rcurve === 'linear' && now >= 0 && now <= lastRelease.reltime;
+			interruptedLine = rcurve === 0 && now >= 0 && now <= lastRelease.reltime;
 			lastRelease = false;
 		}
 		var atktime = attack;
@@ -150,9 +150,11 @@ function ADSRNode(ctx, opts){
 			this.offset.linearRampToValueAtTime(v, when);
 		else
 			this.offset.setTargetAtTime(v, when, 0.001);
-		curveTo(this.offset, acurve, peak, when, atktime);
+		curveTo(this.offset, acurve, adjustExpCurve(acurve, v, peak), when, atktime);
+		this.offset.setTargetAtTime(peak, when + atktime, 0.001);
 		this.offset.setTargetAtTime(peak, when + atktime + hold, 0.001);
-		curveTo(this.offset, dcurve, sustain, when + atktime + hold, decay);
+		curveTo(this.offset, dcurve, sustain_adj, when + atktime + hold, decay);
+		this.offset.setTargetAtTime(sustain, when + atktime + hold + decay, 0.001);
 		return this;
 	};
 
@@ -173,8 +175,8 @@ function ADSRNode(ctx, opts){
 		var atktime = lastTrigger.atktime;
 		// check if a linear attack or a linear decay has been interrupted by this release
 		var interruptedLine =
-			(acurve === 'linear' && tnow >= 0 && tnow <= atktime) ||
-			(dcurve === 'linear' && tnow >= atktime + hold && tnow <= atktime + hold + decay);
+			(acurve === 0 && tnow >= 0 && tnow <= atktime) ||
+			(dcurve === 0 && tnow >= atktime + hold && tnow <= atktime + hold + decay);
 		lastTrigger = false;
 
 		this.offset.cancelScheduledValues(when);
@@ -193,7 +195,8 @@ function ADSRNode(ctx, opts){
 			this.offset.linearRampToValueAtTime(v, when);
 		else
 			this.offset.setTargetAtTime(v, when, 0.001);
-		curveTo(this.offset, rcurve, base, when, reltime);
+		curveTo(this.offset, rcurve, adjustExpCurve(rcurve, v, base), when, reltime);
+		this.offset.setTargetAtTime(base, when + reltime, 0.001);
 		return this;
 	};
 
@@ -207,16 +210,17 @@ function ADSRNode(ctx, opts){
 	};
 
 	node.update = function(opts){
-		base    = getNum  (opts, 'base'        , base   );
-		attack  = getNum  (opts, 'attack'      , attack );
-		acurve  = getCurve(opts, 'attackCurve' , acurve );
-		peak    = getNum  (opts, 'peak'        , peak   );
-		hold    = getNum  (opts, 'hold'        , hold   );
-		decay   = getNum  (opts, 'decay'       , decay  );
-		dcurve  = getCurve(opts, 'decayCurve'  , dcurve );
-		sustain = getNum  (opts, 'sustain'     , sustain);
-		release = getNum  (opts, 'release'     , release);
-		rcurve  = getCurve(opts, 'releaseCurve', rcurve );
+		base     = getNum(opts, 'base'         , base   );
+		attack   = getNum(opts, 'attack'       , attack );
+		acurve   = getNum(opts, 'attackCurve'  , acurve );
+		peak     = getNum(opts, 'peak'         , peak   );
+		hold     = getNum(opts, 'hold'         , hold   );
+		decay    = getNum(opts, 'decay'        , decay  );
+		dcurve   = getNum(opts, 'decayCurve'   , dcurve );
+		sustain  = getNum(opts, 'sustain'      , sustain);
+		release  = getNum(opts, 'release'      , release);
+		rcurve   = getNum(opts, 'releaseCurve' , rcurve );
+		sustain_adj = adjustExpCurve(dcurve, peak, sustain);
 		return this.reset();
 	};
 

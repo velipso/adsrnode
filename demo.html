@@ -51,10 +51,7 @@ input[type=range] {
 			</tr>
 			<tr>
 				<td>Attack Curve:</td>
-				<td style="text-align: left;"><select id="acurve">
-					<option value="linear">linear</option>
-					<option value="exponential" selected="selected">exponential</option>
-				</select></td>
+				<td>0 <input type="range" min="0" max="100" value="60" id="acurve" /> 10</td>
 			</tr>
 			<tr>
 				<td>Peak:</td>
@@ -70,10 +67,7 @@ input[type=range] {
 			</tr>
 			<tr>
 				<td>Decay Curve:</td>
-				<td style="text-align: left;"><select id="dcurve">
-					<option value="linear">linear</option>
-					<option value="exponential">exponential</option>
-				</select></td>
+				<td>0 <input type="range" min="0" max="100" value="0" id="dcurve" /> 10</td>
 			</tr>
 			<tr>
 				<td>Sustain:</td>
@@ -85,10 +79,7 @@ input[type=range] {
 			</tr>
 			<tr>
 				<td>Release Curve:</td>
-				<td style="text-align: left;"><select id="rcurve">
-					<option value="linear">linear</option>
-					<option value="exponential">exponential</option>
-				</select></td>
+				<td>0 <input type="range" min="0" max="100" value="20" id="rcurve" /> 10</td>
 			</tr>
 		</tbody>
 	</table>
@@ -106,20 +97,19 @@ function redraw(){
 		return parseFloat(document.getElementById(id).value) / 10;
 	}
 	function readCurve(id){
-		var e = document.getElementById(id);
-		return e.options[e.selectedIndex].value;
+		return parseFloat(document.getElementById(id).value) / 10;
 	}
 	var opts = {
-		base:         readValue('base'   ),
-		attack:       readTime ('attack' ),
-		attackCurve:  readCurve('acurve' ),
-		peak:         readValue('peak'   ),
-		hold:         readTime ('hold'   ),
-		decay:        readTime ('decay'  ),
-		decayCurve:   readCurve('dcurve' ),
-		sustain:      readValue('sustain'),
-		release:      readTime ('release'),
-		releaseCurve: readCurve('rcurve' )
+		base:         readValue ('base'   ),
+		attack:       readTime  ('attack' ),
+		attackCurve:  readCurve ('acurve' ),
+		peak:         readValue ('peak'   ),
+		hold:         readTime  ('hold'   ),
+		decay:        readTime  ('decay'  ),
+		decayCurve:   readCurve ('dcurve' ),
+		sustain:      readValue ('sustain'),
+		release:      readTime  ('release'),
+		releaseCurve: readCurve ('rcurve' )
 	};
 
 	// check if any changes have been made
@@ -138,13 +128,8 @@ function redraw(){
 	lastopts = opts;
 
 	var out = '';
-	for (var k in opts){
-		out += '\n  ' + k + ': ';
-		if (typeof opts[k] === 'number')
-			out += opts[k].toFixed(1) + ',';
-		else
-			out += JSON.stringify(opts[k]) + ',';
-	}
+	for (var k in opts)
+		out += '\n  ' + k + ': ' + opts[k].toFixed(1) + ',';
 	document.getElementById('raw').innerHTML = '{' + out.substr(0, out.length - 1) + '\n}';
 
 	var rate = 44100;

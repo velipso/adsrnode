@@ -23,18 +23,17 @@ var envelope = ADSRNode(ctx, {
 });
 
 // advanced ADSR envelope
-// where <curve> can be 'linear' or 'exponential'
 var envelope = ADSRNode(ctx, {
-  base:             5.0, // starting value (default: 0.0)
-  attack:           0.2, // seconds until hitting peak value
-  attackCurve:  <curve>, // type of curve for attack (default: 'linear')
-  peak:             9.0, // peak value (default: 1.0)
-  hold:             0.3, // seconds to hold at the peak value (default: 0.0)
-  decay:            0.4, // seconds until hitting sustain value
-  decayCurve:   <curve>, // type of curve for decay (default: 'linear')
-  sustain:          3.0, // sustain value
-  release:          0.5, // seconds until returning back to base value
-  releaseCurve: <curve>  // type of curve for release (default: 'linear')
+  base:         5.0, // starting value (default: 0.0)
+  attack:       0.2, // seconds until hitting peak value
+  attackCurve:  0.0, // amount of curve for attack (default: 0.0)
+  peak:         9.0, // peak value (default: 1.0)
+  hold:         0.3, // seconds to hold at the peak value (default: 0.0)
+  decay:        0.4, // seconds until hitting sustain value
+  decayCurve:   5.0, // amount of curve for decay (default: 0.0)
+  sustain:      3.0, // sustain value
+  release:      0.5, // seconds until returning back to base value
+  releaseCurve: 1.0  // amount of curve for release (default: 0.0)
 });
 ```
 
