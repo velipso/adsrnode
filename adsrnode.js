@@ -154,7 +154,8 @@ function ADSRNode(ctx, opts){
 			this.offset.setTargetAtTime(v, when, 0.001);
 		curveTo(this.offset, acurve, adjustCurve(acurve, v, peak), when, atktime);
 		this.offset.setTargetAtTime(peak, when + atktime, 0.001);
-		this.offset.setTargetAtTime(peak, when + atktime + hold, 0.001);
+		if (hold > 0)
+			this.offset.setTargetAtTime(peak, when + atktime + hold, 0.001);
 		curveTo(this.offset, dcurve, sustain_adj, when + atktime + hold, decay);
 		this.offset.setTargetAtTime(sustain, when + atktime + hold + decay, 0.001);
 		return this;
