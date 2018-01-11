@@ -30,19 +30,25 @@ function ADSRNode(ctx, opts){
 		throw new Error('[ADSRNode] Expecting "' + key + '" to be a number');
 	}
 
-	// extract options
-	var base    = getNum(opts, 'base'         ,        0);
-	var attack  = getNum(opts, 'attack'                 );
-	var acurve  = getNum(opts, 'attackCurve'  ,        0);
-	var peak    = getNum(opts, 'peak'         ,        1);
-	var hold    = getNum(opts, 'hold'         ,        0);
-	var decay   = getNum(opts, 'decay'                  );
-	var dcurve  = getNum(opts, 'decayCurve'   ,        0);
-	var sustain = getNum(opts, 'sustain'                );
-	var release = getNum(opts, 'release'                );
-	var rcurve  = getNum(opts, 'releaseCurve' ,        0);
+	var attack, decay, sustain, sustain_adj, release;
+	var base = 0, acurve = 0, peak = 1, hold = 0, dcurve = 0, rcurve = 0;
 
-	var sustain_adj = adjustCurve(dcurve, peak, sustain);
+	function update(opts){
+		base    = getNum(opts, 'base'        , base   );
+		attack  = getNum(opts, 'attack'      , attack );
+		acurve  = getNum(opts, 'attackCurve' , acurve );
+		peak    = getNum(opts, 'peak'        , peak   );
+		hold    = getNum(opts, 'hold'        , hold   );
+		decay   = getNum(opts, 'decay'       , decay  );
+		dcurve  = getNum(opts, 'decayCurve'  , dcurve );
+		sustain = getNum(opts, 'sustain'     , sustain);
+		release = getNum(opts, 'release'     , release);
+		rcurve  = getNum(opts, 'releaseCurve', rcurve );
+		sustain_adj = adjustCurve(dcurve, peak, sustain);
+	}
+
+	// extract options
+	update(opts);
 
 	// create the node and inject the new methods
 	var node = ctx.createConstantSource();
@@ -213,17 +219,7 @@ function ADSRNode(ctx, opts){
 	};
 
 	node.update = function(opts){
-		base    = getNum(opts, 'base'        , base   );
-		attack  = getNum(opts, 'attack'      , attack );
-		acurve  = getNum(opts, 'attackCurve' , acurve );
-		peak    = getNum(opts, 'peak'        , peak   );
-		hold    = getNum(opts, 'hold'        , hold   );
-		decay   = getNum(opts, 'decay'       , decay  );
-		dcurve  = getNum(opts, 'decayCurve'  , dcurve );
-		sustain = getNum(opts, 'sustain'     , sustain);
-		release = getNum(opts, 'release'     , release);
-		rcurve  = getNum(opts, 'releaseCurve', rcurve );
-		sustain_adj = adjustCurve(dcurve, peak, sustain);
+		update(opts);
 		return this.reset();
 	};
 

@@ -42,7 +42,7 @@ input[type=range] {
 		<tbody>
 			<tr>
 				<td>Base:</td>
-				<td>-10 <input type="range" min="0" max="200" value="100" id="base" /> 10</td>
+				<td>-5 <input type="range" min="0" max="100" value="50" id="base" /> 5</td>
 				<td rowspan="11"><pre id="raw"></pre></td>
 			</tr>
 			<tr>
@@ -55,7 +55,7 @@ input[type=range] {
 			</tr>
 			<tr>
 				<td>Peak:</td>
-				<td>-10 <input type="range" min="0" max="200" value="120" id="peak" /> 10</td>
+				<td>-5 <input type="range" min="0" max="100" value="70" id="peak" /> 5</td>
 			</tr>
 			<tr>
 				<td>Hold:</td>
@@ -71,7 +71,7 @@ input[type=range] {
 			</tr>
 			<tr>
 				<td>Sustain:</td>
-				<td>-10 <input type="range" min="0" max="200" value="110" id="sustain" /> 10</td>
+				<td>-5 <input type="range" min="0" max="100" value="60" id="sustain" /> 5</td>
 			</tr>
 			<tr>
 				<td>Release:</td>
@@ -91,7 +91,7 @@ var lastopts = false;
 
 function redraw(){
 	function readValue(id){
-		return parseFloat(document.getElementById(id).value) / 10 - 10;
+		return parseFloat(document.getElementById(id).value) / 10 - 5;
 	}
 	function readTime(id){
 		return parseFloat(document.getElementById(id).value) / 10;
