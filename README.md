@@ -24,7 +24,7 @@ var envelope = ADSRNode(ctx, {
 
 // advanced ADSR envelope
 var envelope = ADSRNode(ctx, {
-  base:         5.0, // starting value (default: 0)
+  base:         5.0, // starting/ending value (default: 0)
   attack:       0.2, // seconds until hitting peak value
   attackCurve:  0.0, // amount of curve for attack (default: 0)
   peak:         9.0, // peak value (default: 1)
