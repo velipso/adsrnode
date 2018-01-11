@@ -18,24 +18,26 @@ body {
 </head>
 <body>
 	<canvas id="cnv" width="1600" height="800" style="width: 800px; height: 400px;"></canvas>
+	<p>Move mouse to interact with interruption logic.</p>
+	<p>Click mouse to change mode.</p>
 	<script>
 
 var cnv = document.getElementById('cnv');
 var ctx = cnv.getContext('2d');
-var debugTwo = true;
+var debugMode = 0;
 
 function redraw(offset){
-	var curve = 6;
+	var curve = (debugMode == 0 || debugMode == 2) ? 6 : 0;
 	var opts = {
 		base: -0.5,
-		attack: 0.2,
+		attack: 0.4,
 		attackCurve: curve,
 		peak: 1,
 		hold: 0.3,
-		decay: 0.4,
+		decay: 0.5,
 		decayCurve: curve,
 		sustain: 0.5,
-		release: 0.5,
+		release: 0.3,
 		releaseCurve: curve
 	};
 
@@ -48,7 +50,7 @@ function redraw(offset){
 	env.connect(actx.destination);
 	env.start();
 	env.trigger(0);
-	if (debugTwo){
+	if (debugMode == 0 || debugMode == 1){
 		if (offset * duration > downtime)
 			env.release(downtime);
 		env.trigger(offset * duration);
@@ -59,6 +61,10 @@ function redraw(offset){
 	actx.startRendering().then(function(buf){
 		ctx.fillStyle = '#fff';
 		ctx.fillRect(0, 0, cnv.width, cnv.height);
+		ctx.fillStyle = '#000';
+		ctx.font = '20px sans-serif';
+		ctx.fillText((['Two Curves', 'Two Linear', 'Single Curves', 'Single Linear'])[debugMode],
+			10, 30);
 		ctx.beginPath();
 		var data = buf.getChannelData(0);
 		for (var sx = 0; sx < cnv.width; sx++){
@@ -80,9 +86,11 @@ cnv.addEventListener('mousemove', function(e){
 });
 
 cnv.addEventListener('click', function(e){
-	debugTwo = !debugTwo;
+	debugMode = (debugMode + 1) % 4;
 	redraw(e.offsetX * 2 / cnv.width);
 });
+
+redraw(1);
 	</script>
 </body>
 </html>
