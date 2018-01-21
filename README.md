@@ -25,14 +25,14 @@ var envelope = ADSRNode(ctx, {
 // advanced ADSR envelope
 var envelope = ADSRNode(ctx, {
   base:         5.0, // starting/ending value (default: 0)
-  attack:       0.2, // seconds until hitting peak value
+  attack:       0.2, // seconds until hitting peak value (default: 0)
   attackCurve:  0.0, // amount of curve for attack (default: 0)
   peak:         9.0, // peak value (default: 1)
   hold:         0.3, // seconds to hold at the peak value (default: 0)
-  decay:        0.4, // seconds until hitting sustain value
+  decay:        0.4, // seconds until hitting sustain value (default: 0)
   decayCurve:   5.0, // amount of curve for decay (default: 0)
-  sustain:      3.0, // sustain value
-  release:      0.5, // seconds until returning back to base value
+  sustain:      3.0, // sustain value (required)
+  release:      0.5, // seconds until returning back to base value (default: 0)
   releaseCurve: 1.0  // amount of curve for release (default: 0)
 });
 ```
@@ -50,7 +50,7 @@ It must be started with
 to begin outputting the `base` value.  It can be stopped with
 [envelope.stop()](https://developer.mozilla.org/en-US/docs/Web/API/AudioScheduledSourceNode/stop).
 
-The following methods are added to the object:
+The following methods/properties are added to the object:
 
 ### *envelope*.trigger([*when*])
 
@@ -78,6 +78,11 @@ Update the values of the ADSR curve.  All keys are optional.  For example, to ju
 peak, use `envelope.update({ peak: 2 })`.
 
 Updating the envelope will also `reset` it.
+
+### *envelope*.baseTime
+
+This value is set after an `envelope.release(...)` to provide the exact moment (in absolute seconds)
+that the envelope will return to the base value.
 
 Triggering and Releasing
 ------------------------

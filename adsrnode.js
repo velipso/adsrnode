@@ -11,14 +11,14 @@ function ADSRNode(ctx, opts){
 	// `opts` is an object in the format:
 	// {
 	//   base:         <number>, // output     optional    default: 0
-	//   attack:       <number>, // seconds    required
+	//   attack:       <number>, // seconds    optional    default: 0
 	//   attackCurve:  <number>, // bend       optional    default: 0
 	//   peak:         <number>, // output     optional    default: 1
 	//   hold:         <number>, // seconds    optional    default: 0
-	//   decay:        <number>, // seconds    required
+	//   decay:        <number>, // seconds    optional    default: 0
 	//   decayCurve:   <number>, // bend       optional    default: 0
 	//   sustain:      <number>, // output     required
-	//   release:      <number>, // seconds    required
+	//   release:      <number>, // seconds    optional    default: 0
 	//   releaseCurve: <number>  // bend       optional    default: 0
 	// }
 
@@ -30,7 +30,7 @@ function ADSRNode(ctx, opts){
 		throw new Error('[ADSRNode] Expecting "' + key + '" to be a number');
 	}
 
-	var attack, decay, sustain, sustain_adj, release;
+	var attack = 0, decay = 0, sustain, sustain_adj, release = 0;
 	var base = 0, acurve = 0, peak = 1, hold = 0, dcurve = 0, rcurve = 0;
 
 	function update(opts){
@@ -141,7 +141,7 @@ function ADSRNode(ctx, opts){
 			lastRelease = false;
 		}
 		var atktime = attack;
-		if (Math.abs(base - peak) >eps)
+		if (Math.abs(base - peak) > eps)
 			atktime = attack * (v - peak) / (base - peak);
 		lastTrigger = { when: when, v: v, atktime: atktime };
 
@@ -189,6 +189,7 @@ function ADSRNode(ctx, opts){
 		lastTrigger = false;
 
 		this.offset.cancelScheduledValues(when);
+		node.baseTime = when + reltime;
 
 		if (DEBUG){
 			// simulate curve using releasedValue (debug purposes)
@@ -215,6 +216,7 @@ function ADSRNode(ctx, opts){
 		var now = this.context.currentTime;
 		this.offset.cancelScheduledValues(now);
 		this.offset.setTargetAtTime(base, now, 0.001);
+		node.baseTime = now;
 		return this;
 	};
 
@@ -222,6 +224,8 @@ function ADSRNode(ctx, opts){
 		update(opts);
 		return this.reset();
 	};
+
+	node.baseTime = 0;
 
 	return node;
 }
